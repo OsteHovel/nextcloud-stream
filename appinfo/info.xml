@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<info xmlns:xsi= "http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+    <id>stream</id>
+    <name>Stream</name>
+    <summary>Stream media from web interface</summary>
+    <screenshot></screenshot>
+    <description><![CDATA[Adds a stream option to the right click menu on audio and video files
+
+Inspired from how "Stream" works on the Nextcloud Android App, by creating a 24h link and in this case I also pack it in a playlist and "open" it.
+The reason for packing it in a playlist is to get the same behaviour as the app, to call a media player and play it back instead of trying to download it.
+The link created also allows for searching in the media.
+]]></description>
+    <version>1.0.0</version>
+    <licence>agpl</licence>
+    <author mail="ostehovel@ostsoft.com">Oste Hovel</author>
+    <namespace>Stream</namespace>
+    <category>files</category>
+    <category>tools</category>
+    <website></website>
+    <bugs></bugs>
+    <dependencies>
+        <nextcloud min-version="19" max-version="19"/>
+    </dependencies>
+</info>
