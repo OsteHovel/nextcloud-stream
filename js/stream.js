@@ -12,58 +12,60 @@ function downloader(data, type, name) {
     window.URL.revokeObjectURL(url);
 }
 
-function generatePlaylist(filename, url){
-	var data = "EXTM3U\n#EXTINF:0,"+filename+"\n"+url;
-	downloader(data, "audio/mpegurl", filename);
+function generatePlaylist(filename, context) {
+    var fileId = context.fileInfoModel.attributes.id;
+
+    var tr = context.fileList.findFileEl(filename);
+    context.fileList.showFileBusyState(tr, true);
+
+    var url = OC.generateUrl('/ocs/v2.php/apps/dav/api/v1/direct?format=json&fileId=' + fileId);
+    fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'no-cache',
+        credentials: 'same-origin',
+        headers: {'OCS-APIRequest': 'true'},
+        redirect: 'error',
+        referrerPolicy: 'no-referrer-when-downgrade',
+    })
+        .then(data => data.json())
+        .then(data => data && data.ocs && data.ocs.data && data.ocs.data.url)
+        .then(url => {
+            if (url) {
+                downloader(
+                    "#EXTM3U\n" +
+                    "#EXTENC: UTF-8\n" +
+                    "#EXTINF:0," + filename + "\n" +
+                    url,
+                    "audio/mpegurl",
+                    filename + ".m3u");
+            } else {
+                OC.dialogs.alert(
+                    t('stream', 'Unable to generate link for \"' + filename + '\"'),
+                    t('stream', 'Error stream')
+                );
+            }
+            context.fileList.showFileBusyState(tr, false);
+        })
+        .catch(error => {
+            OC.dialogs.alert(
+                t('stream', 'Unable to generate link for \"' + filename + '\" ' + error),
+                t('stream', 'Playlist stream')
+            );
+            context.fileList.showFileBusyState(tr, false);
+        });
 }
 
-$(document).ready(function () {
-
-	var actionsStream = {
-		init: function () {
-            var self = this;
-			['video', 'audio'].forEach(type => {
-				OCA.Files.fileActions.registerAction({
-					name: 'stream',
-					displayName: t('stream', 'Stream'),
-					mime: type,
-					permissions: OC.PERMISSION_READ,
-					//type: OCA.Files.FileActions.TYPE_DROPDOWN,
-					iconClass: 'icon-stream',
-					actionHandler: self.generatePlaylist,
-				});
-			});
-		},
-		
-		generatePlaylist: function(filename, context){
-			var fileId = context.fileInfoModel.attributes.id;
-			
-			var tr = context.fileList.findFileEl(filename);
-			context.fileList.showFileBusyState(tr, true);
-			
-			$.ajax({
-				type: "POST",
-				url: OC.generateUrl('/ocs/v2.php/apps/dav/api/v1/direct?format=json&fileId=' + fileId),
-			}).done(function(res) {
-				var url = (res && res.ocs && res.ocs.data && res.ocs.data.url) ? res.ocs.data.url : null;
-				if(url){
-					generatePlaylist(filename, url);
-				}else{
-					OC.dialogs.alert(
-							t('stream', 'Unable to generate link for \"' + filename + '\"'),
-							t('stream', 'Error stream')
-				 );
-				}
-				context.fileList.showFileBusyState(tr, false);
-			}).fail(function(res) {
-				 OC.dialogs.alert(
-							t('stream', 'Unable to generate link for \"' + filename + '\"'),
-							t('stream', 'Playlis stream')
-				 );
-				context.fileList.showFileBusyState(tr, false);
-			});
-		}
-	}
-	actionsStream.init();
+window.addEventListener('DOMContentLoaded', (event) => {
+    ['video', 'audio'].forEach(type => {
+        OCA.Files.fileActions.registerAction({
+            name: 'stream',
+            displayName: t('stream', 'Stream'),
+            mime: type,
+            permissions: OC.PERMISSION_READ,
+            //type: OCA.Files.FileActions.TYPE_DROPDOWN,
+            iconClass: 'icon-stream',
+            actionHandler: generatePlaylist,
+        });
+    });
 });
-
